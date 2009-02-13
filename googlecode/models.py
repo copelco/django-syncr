@@ -1,3 +1,9 @@
+# GoogleCodeSyncr
+#
+# Author:  Maxime Haineault <haineault@gmail.com>
+# License: MIT License ~ http://www.opensource.org/licenses/mit-license.php
+# Documentation: http://code.google.com/p/django-syncr/wiki/SyncrGoogleCode
+
 from django.db import models
 
 class GoogleCodeSvnChange(models.Model):

@@ -2,6 +2,7 @@
 #
 # Author:  Maxime Haineault <haineault@gmail.com>
 # License: MIT License ~ http://www.opensource.org/licenses/mit-license.php
+# Documentation: http://code.google.com/p/django-syncr/wiki/SyncrGoogleCode
 
 import time, re
 from datetime import datetime
