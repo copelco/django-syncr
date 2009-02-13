@@ -6,6 +6,7 @@
 import time, re
 from datetime import datetime
 from syncr.googlecode.models import GoogleCodeSvnChange, GoogleCodeProjectDownload
+from django.conf import settings
 
 # This apps depends on feedparser (http://www.feedparser.org/)
 # You might have to change the following import path
@@ -15,12 +16,15 @@ import feedparser
 # To determine the project slug, use the project URL
 # For example: http://code.google.com/p/django-syncr/
 # In this case, the project slug is 'django-syncr'
-GC_PROJECTDOWNLOADS = ['my-project-slug']
-GC_SVNCHANGES = ['my-project-slug']
 
-# This should not change anytime soon
-GC_PROJECTDOWNLOADS_URL = 'http://code.google.com/feeds/p/%s/downloads/basic'
-GC_SVNCHANGES_URL       = 'http://code.google.com/feeds/p/%s/svnchanges/basic'
+# GC_SVNCHANGES = ['project1-slug', 'project2-slug']
+# GC_PROJECTDOWNLOADS = ['project1-slug', 'project2-slug']
+
+
+GC_SVNCHANGES           = getattr(settings, 'GC_SVNCHANGES', [])
+GC_PROJECTDOWNLOADS     = getattr(settings, 'GC_PROJECTDOWNLOADS', [])
+GC_PROJECTDOWNLOADS_URL = getattr(settings, 'GC_PROJECTDOWNLOADS_URL', 'http://code.google.com/feeds/p/%s/downloads/basic')
+GC_SVNCHANGES_URL       = getattr(settings, 'GC_SVNCHANGES_URL', 'http://code.google.com/feeds/p/%s/svnchanges/basic')
 
 
 class GoogleCodeSyncr:
