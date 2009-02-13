@@ -53,7 +53,10 @@ class GoogleCodeSyncr:
                         project = proj,
                         author = entry.author,
                 )
-                sc.save()
+                try:
+                    sc.save()
+                except:
+                    pass
 
     def syncSvnChanges(self):
         """
@@ -83,4 +86,7 @@ class GoogleCodeSyncr:
                         author = entry.author,
                         rev = revision,
                 )
-                sc.save()
+                try:
+                    sc.save()
+                except:
+                    pass
