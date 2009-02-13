@@ -16,7 +16,7 @@ class GoogleCodeSvnChange(models.Model):
     rev           = models.PositiveIntegerField()
 
     def __unicode__(self):
-        return u'%s' % self.rev
+        return u'r%s - %s' % (self.rev, self.title, )
 
 
 class GoogleCodeProjectDownload(models.Model):
@@ -28,5 +28,5 @@ class GoogleCodeProjectDownload(models.Model):
     author        = models.CharField(max_length=50)
 
     def __unicode__(self):
-        return u'%s' % self.rev
+        return u'%s' % self.title
 
