@@ -26,13 +26,13 @@ SVN_REVISION_END = getattr(settings, 'SVN_REVISION_END', pysvn.Revision(pysvn.op
 SVN_DISCOVER_CHANGED_PATHS = getattr(settings, 'SVN_DISCOVER_CHANGED_PATHS', True)
 SVN_STRICT_NODE_HISTORY = getattr(settings, 'SVN_STRICT_NODE_HISTORY', True)
 SVN_LIMIT = getattr(settings, 'SVN_LIMIT', 1000)
-SVN_PEG_REVISION = getattr(settings, 'SVN_LIMIT', pysvn.Revision(pysvn.opt_revision_kind.unspecified))
+SVN_PEG_REVISION = getattr(settings, 'SVN_PEG_REVISION', pysvn.Revision(pysvn.opt_revision_kind.unspecified))
 SVN_INCLUDE_MERGED_REVISIONS = getattr(settings, 'SVN_INCLUDE_MERGED_REVISIONS', False)
 
 
-def getoption(repos, key, default=False):
-    if key in repos:
-        return repos[key]
+def getoption(sync, key, default=False):
+    if key in sync:
+        return sync[key]
     else:
         return default
 
@@ -51,48 +51,40 @@ class SubversionSyncr:
     SubversionSyncr objects sync subversion revisions log with the Django backend.
     """
 
-    def syncRevisions(self):
+    def syncRevisions(self, **sync):
         """
         Synchronize Subversion revisions from a SVN server
         """
+        
+        count  = 0
+        client = pysvn.Client()
+        logs   = client.log(sync['url'],
+            revision_start=           getoption(sync, 'start', SVN_REVISION_START),
+            revision_end=             getoption(sync, 'end', SVN_REVISION_END),
+            discover_changed_paths=   getoption(sync, 'discover_changed_paths', SVN_DISCOVER_CHANGED_PATHS),
+            strict_node_history=      getoption(sync, 'strict_node_history', SVN_STRICT_NODE_HISTORY),
+            limit=                    getoption(sync, 'limit', SVN_LIMIT),
+            peg_revision=             getoption(sync, 'peg_revision', SVN_PEG_REVISION),
+            include_merged_revisions= getoption(sync, 'include_merged_revisions', SVN_INCLUDE_MERGED_REVISIONS))
 
-        for repos in SVN_SYNCS:
-            print '[syncr:subversion] synchronizing: %s' % repos['url']
+        for log in logs:
+            rev = Revision(
+                    svnPath = u'%s' % sync['url'],
+                    date = datetime.fromtimestamp(log.data['date']),
+                    has_children = log.data['has_children'],
+                    message = log.data['message'],
+                    revision = log.data['revision'].number,
+                    revision_kind = str(log.data['revision'].kind),
+                    )
+            if 'changed_paths' in log.data:
+                rev.changed_paths = u'%s' % get_changed_paths_json(log.data['changed_paths'])
+            if 'author' in log.data:
+                rev.author = u'%s' % log.data['author']
 
-            
-            client = pysvn.Client()
+            try:
+                rev.save()
+                count = count + 1
+            except Exception, e:
+                print 'Sync Error: %s' % (e)
 
-            if 'get_login' in repos:
-                client.callback_get_login = repos['get_login']
-
-            logs = client.log(repos['url'],
-                revision_start=getoption(repos, 'start', SVN_REVISION_START),
-                revision_end=getoption(repos, 'end', SVN_REVISION_END),
-                discover_changed_paths=getoption(repos, 'discover_changed_paths', SVN_DISCOVER_CHANGED_PATHS),
-                strict_node_history=getoption(repos, 'strict_node_history', SVN_STRICT_NODE_HISTORY),
-                limit=getoption(repos, 'limit', SVN_LIMIT),
-                peg_revision=getoption(repos, 'peg_revision', SVN_PEG_REVISION),
-                include_merged_revisions=getoption(repos, 'include_merged_revisions', SVN_INCLUDE_MERGED_REVISIONS))
-
-            count = 0
-            for log in logs:
-                rev = Revision(
-                        svnPath = u'%s' % repos['url'],
-                        date = datetime.fromtimestamp(log.data['date']),
-                        has_children = log.data['has_children'],
-                        message = log.data['message'],
-                        revision = log.data['revision'].number,
-                        revision_kind = str(log.data['revision'].kind),
-                        )
-                if 'changed_paths' in log.data:
-                    rev.changed_paths = u'%s' % get_changed_paths_json(log.data['changed_paths'])
-                if 'author' in log.data:
-                    rev.author = u'%s' % log.data['author']
-
-                try:
-                    rev.save()
-                    count = count + 1
-                except Exception, e:
-                    print 'Sync Error: %s' % (e)
-
-            print '[syncr:subversion] synchronized %s revision(s)' % count
+        return count
